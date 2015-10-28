@@ -343,7 +343,81 @@ define('xo.enumerable', ['xo.core'], function(xo){
                 });
 
                 return found;
+            },
+
+            /**
+             * Chain enumerable calls:
+             *
+             *      xo.enumerable.chain([1, 2, 3, 4])
+             *        .filter(function(n) { return n % 2 == 0; })
+             *        .map(function(n) { return n * 10; })
+             *        .values();
+             *
+             *      => [20, 40]
+             *
+             * @param {Object} enumerable A set of items that responds to `length`
+             * @returns {Object} The chained enumerable API
+             */
+            chain: function(enumerable) {
+                return new global.enumerable.Chainer(enumerable);
+            },
+
+            identity : function(value) {
+                return value;
             }
+        }; // end enumerable object
+
+        /**
+         *  Aliases
+         */
+
+        global.enumerable.select = global.enumerable.filter;
+        global.enumerable.collect = global.enumerable.map;
+        global.enumerable.inject = global.enumerable.reduce;
+        global.enumerable.rest = global.enumerable.tail;
+        global.enumerable.any = global.enumerable.some;
+        global.enumerable.every = global.enumerable.all;
+
+        global.chainableMethods = ['map', 'collect', 'detect', 'filter', 'reduce', 'each',
+                                    'tail', 'rest', 'reject', 'plunk', 'any', 'some', 'all'];
+
+
+        /**
+         *  Chainer class
+         */
+        global.enumerable.Chainer = function(values){
+            this.results = values;
+        };
+
+        global.enumerable.Chainer.prototype.values = function(){
+            return this.results;
+        };
+
+        // Map selected methods by wrapping them in a closure that returns this each time
+        global.enumerable.each(global.chainableMethods, function(methodName) {
+            var method = global.enumerable[methodName];
+            global.enumerable.Chainer.prototype[methodName] = function() {
+                var args = Array.prototype.slice.call(arguments);
+                args.unshift(this.results);
+
+                this.results = method.apply(this, args);
+
+                return this;
+            };
+        });
+
+        global.init(function(arg){
+            if(arg.hasOwnProperty.length && typeof arg !== 'string') {
+                return global.enumerable.chain(arg);
+            }
+        });
+    } // end EnumerableModule
+
+    if(typeof module !== 'undefined') {
+        module.exports = function(t){
+            return EnumerableModule(t);
         }
+    } else {
+        EnumerableModule(xo);
     }
 });
