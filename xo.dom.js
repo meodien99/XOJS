@@ -11,7 +11,7 @@
  */
 
 define('xo.dom',['xo.core'], function(xo) {
-    var dom = {},
+    var dom = {}, // DOM Object
         InvalidFinder = Error,
         find, matchMap, findMap, filter, getStyle, setStyle, tokenMap, // APIs
         macros, rules, nodeTypes, cssNumericalProperty, booleanAttributes, getAttributeParamFix, propertyFix, // Constants | Configuration
@@ -446,5 +446,123 @@ define('xo.dom',['xo.core'], function(xo) {
         return this.results;
     };
 
+    function normalize(text){
+        return text.replace(/^\s+|\s+$/g).replace(/[ \t\r\n\f]/g, ' ');
+    }
 
+
+
+    // DOM OBJECT
+    if(!dom){
+        dom = {};
+    }
+
+    dom.tokenize = function(selector) {
+        var tokenizer = new Tokenizer(selector);
+        return tokenizer;
+    };
+
+    function get(selector, root) {
+        var tokens = dom.tokenize(selector).tokens;
+        var searcher = new Searcher(root, tokens);
+
+        return searcher.parse();
+    }
+
+    xo.addDetectionTest('querySelectorAll', function(){
+        var div = document.createElement('div');
+        div.innerHTML = '<p class="TEST"></p>';
+
+        //Some versions of Safari can't handle uppercase in quirks mode
+        if(div.querySelectorAll) {
+            return (div.querySelectorAll('.TEST').length === 0);
+        }
+
+        // Helps IE release memory associated with the div
+        div = null;
+        return false;
+    });
+
+    /**
+     * Converts property names with hyphens to camelCase.
+     * Example : hello-world => helloWorld
+     * @param text
+     * @returns {string}
+     */
+    function camelCase(text){
+        if(typeof text !== 'string') return;
+
+        return text.replace(/-([a-z])/ig, function(all, letter){
+            return letter.toUpperCase();
+        });
+    }
+
+    /**
+     *  Converts property names in camelCase to ones with hyphens.
+     *  Example : helloWorld => hello-world
+     * @param text
+     * @returns {string}
+     */
+    function uncamel(text){
+        if(typeof text !== 'string') return;
+
+        return text.replace(/([A-Z])/g, '-$1').toLowerCase();
+    }
+
+    function invalidCSSNode(element) {
+        return (!element || element.nodeType === nodeTypes.TEXT_NODE
+        || element.nodeType === nodeTypes.COMMENT_NODE || !element.style);
+    }
+
+    function setStyleProperty(element, property, value) {
+        if(invalidCSSNode(element)) {
+            return ;
+        }
+
+        if(typeof value === 'number' && !cssNumericalProperty[property]) {
+            value += 'px';
+        }
+
+        element.style[property] = value;
+    }
+
+    if(typeof document !== 'undefined') {
+        if(document.documentElement.currentStyle) {
+            getStyle = function(element, property) {
+                return element.currentStyle[camelCase(property)];
+            };
+
+            setStyle = function(element, property, value) {
+                return setStyleProperty(element, camelCase(property), value);
+            };
+        } else if(document.defaultView.getComputedStyle) {
+            getStyle = function(element, property) {
+                return element.ownerDocument.defaultView.getComputedStyle(element, null).getPropertyValue(uncamel(property));
+            };
+
+            setStyle = function(element, property, value) {
+                return setStyleProperty(element, property, value);
+            };
+        }
+    }
+
+
+    /**
+     * Get or set style values
+     *
+     * @param element element A DOM element
+     * @param options
+     * @returns {*} The style value
+     */
+    dom.css = function(element, options) {
+        if(typeof options === 'string') {
+            return getStyle(element, options);
+        } else {
+            for(var property in options) {
+                if(options.hasOwnProperty(property)){
+                    setStyle(element, property, options[property]);
+                }
+            }
+        }
+    };
 });
