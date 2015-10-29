@@ -310,6 +310,8 @@ define('xo.dom',['xo.core'], function(xo) {
 
     /**
      * Tokens are used by the Tokenizer
+     * Tokens are just categorised strings of characters.
+     * This stage of a parser is called a lexical analyser.
      * @param identity
      * @param finder
      * @constructor
@@ -383,6 +385,66 @@ define('xo.dom',['xo.core'], function(xo) {
     }
 
     Searcher.prototype.matchesToken = function(element, token) {
+        if(!matchMap[token.finder]){
+            throw new InvalidFinder('Invalid matcher: ' + token.finder);
+        }
 
-    }
+        return matchMap[token.finder](element, token.identity);
+    };
+
+    Searcher.prototype.find = function(token) {
+        if(!findMap[token.finder]){
+            throw new InvalidFinder('Invalid finder: ' + token.finder);
+        }
+        return findMap[token.finder](this.root, token.identity);
+    };
+
+    Searcher.prototype.matchesAllRules = function(element) {
+        if(this.tokens.length === 0)
+            return;
+
+        var i = this.tokens.length - 1,
+            token = this.tokens,
+            matchFound = false;
+
+        while(i > 0 && element) {
+            if(this.matchesToken(element, token)) {
+                matchFound = true;
+                i --;
+                token = this.tokens[i];
+            }
+            element = element.parentNode;
+        }
+
+        return matchFound && i < 0;
+    };
+
+    Searcher.prototype.parse = function(){
+        //Find all elements with the key selector
+        var i, element, elements = this.find(this.key_selector),
+            results = [];
+
+        //Traverse upwards from each element to see if it matches all of the rules
+        for(i = 0; i < elements.length; i++){
+            element = elements[i];
+
+            if(this.tokens.length > 0) {
+                if(this.matchesAllRules(element.parentNode)) {
+                    results.push(element);
+                }
+            } else {
+                if(this.matchesToken(element, this.key_selector)) {
+                    results.push(element);
+                }
+            }
+        }
+
+        return results;
+    };
+
+    Searcher.prototype.values = function(){
+        return this.results;
+    };
+
+
 });
