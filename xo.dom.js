@@ -175,7 +175,7 @@ define('xo.dom',['xo.core'], function(xo) {
         );
     } // end scanner class
 
-    scannerRegExp = scanner();
+    scannerRegExp = scanner(); // is instance of RegExp Class
 
     /**
      * Find prototype
@@ -307,4 +307,82 @@ define('xo.dom',['xo.core'], function(xo) {
 
 
 
+
+    /**
+     * Tokens are used by the Tokenizer
+     * @param identity
+     * @param finder
+     * @constructor
+     */
+    function Token(identity, finder) {
+        this.identity = identity;
+        this.finder = finder;
+    }
+
+    Token.prototype.toString = function(){
+        return 'identity: ' + this.identity + ', finder: ' + this.finder;
+    };
+
+    /**
+     * Tokenizer Class : classify sections of the scanner output
+     *
+     * @param selector
+     * @constructor
+     */
+    function Tokenizer(selector) {
+        this.selector = selector;
+        this.tokens = [];
+        this.tokenize();
+    }
+    Tokenizer.prototype.tokenize = function(){
+        var match, r, finder;
+        r = scannerRegExp;
+        r.lastIndex = 0;
+
+        while(match = r.exec(this.selector)) {
+            finder = null;
+
+            if(match[0]) {
+                finder = 'id';
+            } else if (match[1]) {
+                finder = 'name and id';
+            } else if (match[29]) {
+                finder = 'name';
+            } else if (match[15]) {
+                finder = 'class';
+            } else if (match[20]) {
+                finder = 'name and class';
+            }
+            this.tokens.push(new Token(match[0], finder));
+        }
+        return this.tokens;
+    };
+
+    Tokenizer.prototype.finders = function(){
+        var i, results = [];
+        for(i in this.tokens) {
+            results.push(this.tokens[i].finder);
+        }
+        return results;
+    };
+
+
+
+
+    /**
+     *
+     * @param root
+     * @param tokens Tokenizer
+     * @constructor
+     */
+    function Searcher(root, tokens){
+        this.root = root;
+        this.key_selector = tokens.pop();
+        this.tokens = tokens;
+        this.results = [];
+    }
+
+    Searcher.prototype.matchesToken = function(element, token) {
+
+    }
 });
