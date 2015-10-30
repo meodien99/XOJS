@@ -547,6 +547,8 @@ define('xo.dom',['xo.core'], function(xo) {
     }
 
 
+
+
     /**
      * Get or set style values
      *
@@ -563,6 +565,309 @@ define('xo.dom',['xo.core'], function(xo) {
                     setStyle(element, property, options[property]);
                 }
             }
+        }
+    };
+
+    /**
+     * Finds DOM elements based on a CSS selector.
+     * @param selector A CSS selector
+     * @returns {Array} The elements
+     */
+    dom.get = function(selector){
+        var root = typeof arguments[1] === 'undefined' ? document : arguments[1];
+        return xo.toArray(xo.detect('querySelectorAll') ? root.querySelectorAll(selector) : get(selector, root));
+    };
+
+    /**
+     * Check whether does an element satify a selector, based on root element?
+     * @param element A DOM element
+     * @param selector CSS selector
+     * @param root The root DOM element
+     * @returns {*} The matching DOM element
+     */
+    dom.findElement = function(element, selector, root) {
+        var tokens = dom.tokenize(selector).tokens,
+            searcher = new Searcher(root, []);
+
+        searcher.tokens = tokens;
+
+        while(element) {
+            if(searcher.matchesAllRules(element)) {
+                return element;
+            }
+
+            element = element.parentNode;
+        }
+    };
+
+
+    function manipulateDOM(element, html, callback) {
+        var context = document,
+            isTable = element.nodeName === 'TABLE',
+            shim, div;
+
+        div = context.createElement('div');
+        div.innerHTML = '<' + element.nodeName + '>' + html + '</' + element.nodeName + '>';
+        shim = isTable ? div.lastChild.lastChild : div.lastChild;
+        callback(isTable ? element.lastChild : element, shim);
+        div = null;
+    }
+
+    function getText(elements) {
+        var results = '', element, i;
+
+        for(i = 0; elements[i]; i++) {
+            element = elements[i];
+
+            if(element.nodeType === nodeTypes.TEXT_NODE
+                || element.nodeType === nodeTypes.CDATA_SECTION_NODE) {
+                results += element.nodeValue;
+            } else if (element.nodeType !== nodeTypes.COMMENT_NODE) {
+                results += getText(element.childNodes);
+            }
+        }
+
+        return results;
+    }
+
+    /**
+     * Replaces the content of an element
+     * @param element A DOM element
+     * @param html A string containing HTML
+     */
+    dom.replace = function(element, html) {
+        manipulateDOM(element, html, function(insert, shim) {
+            element.replaceChild(shim, insert);
+        });
+    };
+
+    /**
+     * Appends an element to the end of an element.
+     * @param element A DOM element
+     * @param html A string containing HTML
+     */
+    dom.append = function(element, html) {
+        manipulateDOM(element, html, function(insertTo, shim){
+            insertTo.appendChild(shim.firstChild);
+        });
+    };
+
+    /**
+     * Set or get html
+     * @param element
+     * @param html
+     */
+    dom.html = function(element, html) {
+        if(arguments.length === 1){
+            return element.html;
+        }
+
+        try {
+            element.innerHTML = html;
+        } catch (e) {
+            dom.replace(element, html);
+        }
+    };
+
+    /**
+     * Set or get text nodes
+     * @param element A DOM element
+     * @param text A string containing text
+     * @returns {*}
+     */
+    dom.text = function(element, text) {
+        if(arguments.length === 1) {
+            return getText(element);
+        } else {
+            dom.empty(element);
+            element.appendChild(document.createTextNode(text));
+        }
+    };
+
+    /**
+     * Empty nodes.
+     * @param element
+     */
+    dom.empty = function(element) {
+        while(element.firstChild) {
+            element.removeChild(element.firstChild);
+        }
+    };
+
+    /**
+     * Detects if a class is present
+     *
+     * @param {Object} element A DOM element
+     * @param {String} className The class name
+     * @return {Boolean}
+     */
+    if(xo.detect('classList')) {
+        dom.hasClass = function(element, className) {
+            return element.classList.contains(className);
+        };
+    } else {
+        dom.hasClass = function(element, className) {
+            return (' ' + element.className + ' ').indexOf(' ' + className + ' ') !== -1;
+        };
+    }
+
+    /**
+     * Append CSS classes
+     *
+     * @param element A DOM element
+     * @param className The class name
+     */
+    dom.addClass = function(element, className) {
+        if(!className || typeof className !== 'string') return;
+        if(element.nodeType !== nodeTypes.ELEMENT_NODE) return;
+        if(element.classList) return element.classList.add(className);
+
+        if(element.className && element.className.length) {
+            if(!element.className.match('\\b' + className + '\\b')){
+                element.className += " " + className;
+            }
+        } else {
+            element.className = className;
+        }
+    };
+
+    /**
+     * Remove CSS classes
+     *
+     * @param element A DOM element
+     * @param className The class name
+     */
+    dom.removeClass = function(element, className) {
+        if(!className || typeof className !== 'string') return;
+        if(element.nodeType !== nodeTypes.ELEMENT_NODE) return;
+        if(element.classList) return element.classList.remove(className);
+
+        if(element.className){
+            element.className = element.className.replace(new RegExp('\\s?\\b' + className + '\\b'), '')
+                                                .replace(/^\s+/, '');
+        }
+    };
+
+    xo.addDetectionTest('getAttribute', function(){
+        var div = document.createElement('div');
+        div.innerHTML = '<a href="/example"></a>';
+
+        if(div.childNodes[0].getAttribute('href') === '/example') {
+            return true;
+        }
+
+        // Helps IE release memory associated with the div
+        div = null;
+        return false;
+    });
+
+
+    function getAttribute(element, name){
+        if(propertyFix[name])
+            name = propertyFix[name];
+
+        if(getAttributeParamFix[name])
+            return element.getAttribute(name, 2);
+
+        if(name === 'value' && element.nodeName === 'BUTTON') {
+            return element.getAttributeNode(name).nodeValue;
+        } else if (booleanAttributes[name]) {
+            return element[name] ? name : undefined;
+        }
+
+        return element.getAttribute(name);
+    }
+
+    function setAttribute(element, name, value) {
+        if(propertyFix[name]) {
+            name = propertyFix[name];
+        }
+
+        if(name === 'value' && element.nodeName === 'BUTTON') {
+            return element.getAttributeNode(name).nodeValue = value;
+        }
+
+        return element.setAttribute(name, value);
+    }
+
+    function removeAttribute(element, name) {
+        if(element.nodeType !== nodeTypes.ELEMENT_NODE) return;
+        if(propertyFix[name]) name = propertyFix[name];
+        setAttribute(element, name, '');
+        element.removeAttributeNode(element.getAttributeNode(name));
+    }
+
+    /**
+     *
+     * @param element
+     * @param attr
+     */
+    dom.removeAttr = function(element, attr) {
+        xo.detect('getAttribute') ? element.removeAttribute(attr) : removeAttribute(element, attr);
+    };
+
+
+    /**
+     * Get or set attributes
+     *
+     * @param element
+     * @param attribute
+     * @param value
+     * @returns {*}
+     */
+    dom.attr = function(element, attribute, value){
+        if(typeof value === 'undefined') {
+            return xo.detect('getAttribute')?
+                element.getAttribute(attribute) : getAttribute(element, attribute);
+        } else {
+            if(value === null) {
+                return dom.removeAttr(element, attribute);
+            } else {
+                return xo.detect('getAttribute') ?
+                    element.setAttribute(attribute, value) : setAttribute(element, attribute, value);
+            }
+        }
+    };
+
+
+    /**
+     * Get or set properties.
+     * @param element
+     * @param property
+     * @param value
+     * @returns {*}
+     */
+    dom.prop = function(element, property, value) {
+        if(propertyFix[property]){
+            property = propertyFix[property];
+        }
+
+        if(typeof value === 'undefined') {
+            return element[property];
+        } else {
+            if(value === null) {
+                return dom.removeProperty(element, property);
+            } else {
+                return element[property] = value;
+            }
+        }
+    };
+
+    /**
+     * Removes properties
+     *
+     * @param element
+     * @param property The property name
+     */
+    dom.removeProp = function(element, property) {
+        if(propertyFix[property]) {
+            property = propertyFix[property];
+        }
+
+        try {
+            element[property] = undefined;
+            delete element[property];
+        } catch (e) {
         }
     };
 });
