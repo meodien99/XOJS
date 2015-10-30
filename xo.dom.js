@@ -1102,5 +1102,39 @@ define('xo.dom',['xo.core'], function(xo) {
         }
     };
 
+    xo.domChain.init.prototype = xo.domChain;
 
+    /**
+     * Enumerable methods can be chained with DOM calls:
+     *
+     *      xo('p').each(function(element){
+     *          console.log(element);
+     *      });
+     */
+    if(typeof xo.enumerable !== 'undefined') {
+        xo.domChain['values'] = function(){
+            return this.elements;
+        };
+
+
+        xo.enumerable.each(xo.chainableMethods, function(methodName){
+            xo.domChain[methodName] = function(fn){
+                var elements = xo.enumerable[methodName](this, fn),
+                    ret = xo.domChain;
+
+                this.elements = elements;
+                ret.elements = elements;
+                ret.selector = this.selector;
+                ret.length = elements.length;
+                ret.prevObject = this;
+                ret.writeElements();
+
+                return ret;
+            };
+        });
+    }
+
+    dom.nodeTypes = nodeTypes;
+    xo.dom = dom;
+    return dom;
 });
