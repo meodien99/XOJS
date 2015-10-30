@@ -980,40 +980,127 @@ define('xo.dom',['xo.core'], function(xo) {
             return this;
         },
 
-        css : function(){
+        /**
+         * Get or set style
+         *
+         * @param options Either options for a style to set or a property name
+         * @returns {*}
+         */
+        css : function(options){
+            if(typeof options === 'string'){
+                return this.elements.length > 0 ? getStyle(this.elements[0], options) : null ;
+            } else {
+                for(var i = 0; i < this.elements.length; i++) {
+                    dom.css(this[i], options);
+                }
+            }
 
+            return this;
         },
 
-        addClass : function(){
-
+        /**
+         * All class names
+         *
+         * @param className
+         * @returns {xo.domChain}
+         */
+        addClass : function(className){
+            for(var i = 0; i < this.elements.length; i++) {
+                dom.addClass(this[i], className);
+            }
+            return this;
         },
 
-        hasClass : function(){
+        /**
+         * Detects if a class is present.
+         *
+         * @param className
+         * @returns {boolean}
+         */
+        hasClass : function(className){
+            for(var i = 0; i < this.elements.length; i++) {
+                if(dom.hasClass(this[i], className)) {
+                    return true;
+                }
+            }
 
+            return false;
         },
 
-        removeClass : function(){
+        /**
+         * Remove class name
+         *
+         * @param className
+         */
+        removeClass : function(className){
+            for(var i = 0; i < this.elements.length; i++) {
+                dom.removeClass(this[i], className);
+            }
 
+            return this;
         },
 
-        attr : function(){
-
+        /**
+         * Get or set attr
+         */
+        attr : function(attribute, value){
+            if(this.elements.length > 0) {
+                return dom.attr(this[0], attribute, value);
+            }
         },
 
-        removeAttr : function(){
+        /**
+         * Remove an attribute.
+         *
+         * @param attribute
+         * @returns {xo.domChain}
+         */
+        removeAttr : function(attribute){
+            if(this.elements.length > 0) {
+                dom.removeAttr(this[0], attribute);
+            }
 
+            return this;
         },
 
-        prop : function(){
-
+        /**
+         * Get or set a property
+         * @param property
+         * @param value
+         * @returns {*}
+         */
+        prop : function(property, value){
+            if(this.elements.length > 0) {
+                return dom.prop(this[0], property, value);
+            }
         },
 
-        removeProp : function(){
-
+        /**
+         * Remove properties
+         *
+         * @param property
+         */
+        removeProp : function(property){
+            if(this.elements.length > 0) {
+                return dom.removeProp(this[0], property);
+            }
         },
 
-        append : function(){
+        /**
+         * Append HTML to an element.
+         * Applied to every element.
+         *
+         * @param html
+         * @returns {xo.domChain}
+         */
+        append : function(html){
+            for(var i = 0; i < this.elements.length; i++) {
+                dom.append(this[i], html);
+            }
 
+            return this;
         }
     };
+
+
 });
