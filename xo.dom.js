@@ -923,19 +923,61 @@ define('xo.dom',['xo.core'], function(xo) {
         },
 
         writeElements : function(){
-
+            for(var i = 0; i < this.elements.length; i++) {
+                this[i] = this.elements[i];
+            }
         },
 
+        /**
+         * `first` will return a domChain with a length of 1 or 0.
+         */
         first : function(){
+            var elements = [],
+                ret = xo.domChain;
 
+            ret.elements = this.elements.length === 0 ? [] : [this.elements[0]];
+            ret.selector = this.selector;
+            ret.length = ret.elements.length;
+            ret.prevObject = this;
+            ret.writeElements();
+
+            return ret;
         },
 
-        html : function(){
-
+        /**
+         * Get or set innerHTML
+         * Applied to every element
+         *
+         * @param {String} html A string containing HTML
+         * @returns {Object} `this` or the innerHTML
+         */
+        html : function(html){
+            if(arguments.length === 0){
+                return this.elements.length === 0 ? null : dom.html(this[0]);
+            } else {
+                for(var i = 0; i < this.elements.length; i++) {
+                    dom.html(this[i], html);
+                }
+            }
         },
 
-        text : function(){
+        /**
+         *  Get or set text nodes.
+         *  Applied to every element.
+         *
+         * @param text A string containing text to set
+         * @returns {*}
+         */
+        text : function(text){
+            if(arguments.length === 0){
+                return this.elements.length === 0 ? null : getText(this.elements);
+            } else {
+                for(var i = 0; i < this.elements.length; i++) {
+                    dom.text(this.elements[i], text);
+                }
+            }
 
+            return this;
         },
 
         css : function(){
