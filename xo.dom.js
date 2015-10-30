@@ -870,4 +870,108 @@ define('xo.dom',['xo.core'], function(xo) {
         } catch (e) {
         }
     };
+
+    //Chained API
+    xo.init(function(arg){
+        if(typeof arg === 'string' || typeof arg === 'undefined') {
+            //CSS selector
+            return xo.domChain.init(arg);
+        }
+    });
+
+    xo.domChain = {
+        init : function(selector) {
+            this.selector = selector;
+            this.length = 0;
+            this.prevObject = null;
+            this.elements = [];
+
+            if(!selector)
+                return this;
+            else
+                return this.find(selector);
+        },
+
+        /**
+         *
+         * @param selector
+         * @returns {{init: Function, find: Function}|*}
+         */
+        find : function(selector) {
+            var elements = [],
+                ret = xo.domChain,
+                root = document;
+
+            if(this.prevObject){
+                if(this.prevObject.elements.length > 0) {
+                    root = this.prevObject.elements[0];
+                } else {
+                    root = null;
+                }
+            }
+
+            elements = dom.get(selector, root);
+
+            this.elements = elements;
+            ret.elements = elements;
+            ret.selector = selector;
+            ret.length = elements.length;
+            ret.prevObject = this;
+            ret.writeElements();
+
+            return ret;
+        },
+
+        writeElements : function(){
+
+        },
+
+        first : function(){
+
+        },
+
+        html : function(){
+
+        },
+
+        text : function(){
+
+        },
+
+        css : function(){
+
+        },
+
+        addClass : function(){
+
+        },
+
+        hasClass : function(){
+
+        },
+
+        removeClass : function(){
+
+        },
+
+        attr : function(){
+
+        },
+
+        removeAttr : function(){
+
+        },
+
+        prop : function(){
+
+        },
+
+        removeProp : function(){
+
+        },
+
+        append : function(){
+
+        }
+    };
 });
