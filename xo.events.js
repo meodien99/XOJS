@@ -132,5 +132,41 @@ define('xo.events', ['xo.core', 'xo.dom'], function(xo) {
         }
     }
 
+    function bindOnReady(){
+        if(onReadyBound)
+            return;
+        onReadyBound = true;
 
+        if(document.readyState === 'complete') {
+            ready();
+        } else if (document.addEventListener) {
+            document.addEventListener('DOMContentLoaded', DOMContentLoaded, false);
+            window.addEventListener('load', ready, false);
+        } else if (document.attachEvent) {
+            document.attachEvent('onreadystatechange', DOMContentLoaded);
+
+            window.attachEvent('onload', ready);
+
+            // Check to see if document is ready
+            var toplevel = false;
+
+            try {
+                toplevel = window.frameElement == null;
+            } catch(e) {
+
+            }
+
+            if(document.documentElement.doScroll && toplevel) {
+                DOMReadyScrollCheck();
+            }
+        }
+    }
+
+
+    function IEType(type) {
+        if(type.match(/:/)) {
+            return type;
+        }
+        return 'on' + type;
+    }
 });
