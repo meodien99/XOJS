@@ -173,7 +173,7 @@ define('xo.events', ['xo.core', 'xo.dom'], function(xo) {
     /**
      * Bind an event to an element.
      *
-     *      turing.events.add(element, 'click', function() {
+     *      xo.events.add(element, 'click', function() {
    *        console.log('Clicked');
    *      });
      *
@@ -201,7 +201,7 @@ define('xo.events', ['xo.core', 'xo.dom'], function(xo) {
     /**
      * Remove an event from an element.
      *
-     *      turing.events.add(element, 'click', callback);
+     *      xo.events.add(element, 'click', callback);
      *
      * @param {Object} element A DOM element
      * @param {String} type The event name
@@ -217,4 +217,124 @@ define('xo.events', ['xo.core', 'xo.dom'], function(xo) {
             element.detachEvent(IEType(type), responder);
         }
     };
+
+    /**
+     * Fires an event.
+     *
+     *      xo.events.fire(element, 'click');
+     *
+     * @param {Object} element A DOM element
+     * @param {String} type The event name
+     * @returns {Object} The browser's `fireEvent` or `dispatchEvent` result
+     */
+    events.fire = function(element, type) {
+        var event;
+        if(document.createEventObject) {
+            event = document.createEventObject();
+            fix(event, element);
+
+            //This isn't quite ready
+            if(type.match(/:/)){
+                event.eventName = type;
+                event.eventType = 'ondataavailable';
+                return element.fireEvent(event.eventType, event);
+            } else {
+                return element.fireEvent(IEType(type), event);
+            }
+        } else {
+            event = document.createElement('HTMLEvents');
+            fix(event, element);
+            event.eventName = type;
+            event.initEvent(type, true, true);
+            return !element.dispatchEvent(event);
+        }
+    };
+
+    /**
+     * Add a 'DOM ready' callback.
+     *
+     *      xo.events.ready(function() {
+     *        // The DOM is ready
+     *      });
+     *
+     * @param {Function} callback A callback to run
+     */
+    events.ready = function(callback) {
+        bindOnReady();
+        readyCallbacks.push(callback);
+    };
+
+
+
+    if(xo.dom !== 'undefined') {
+        events.delegate = function(element, selector, type, handler) {
+            return events.add(element, type, function(event){
+                var matches = xo.dom.findElement(event.target, selector, event.currentTarget);
+
+                if(matches) {
+                    handler(event);
+                }
+            });
+        };
+    }
+
+    /**
+     * Events can be chained with DOM calls:
+     *
+     *       xo('p').bind('click', function(e) {
+     *         alert('ouch');
+     *       });
+     *
+     * The event will be bound to each matching element.
+     *
+     */
+    events.addDOMMethods = function(){
+        if(typeof xo.domChain == 'undefined') return;
+
+        xo.domChain.bind = function(type, handler) {
+            var element;
+            for(var i = 0; i < this.length; i++) {
+                element = this[i];
+
+                if(handler) {
+                    xo.events.add(element, type, handler);
+                } else {
+                    xo.events.fire(element, type);
+                }
+            }
+
+            return this;
+        }
+    };
+
+
+    /**
+     * DOM ready event handlers can also be set with:
+     *
+     *      xo.ready(function() { });
+     *
+     * Or just by passing a function to `turing()`:
+     *
+     *      xo(function() {} );
+     *
+     */
+    xo.ready = events.ready;
+    xo.events = events;
+
+    xo.init(function(arg){
+        if(arguments.length === 1 && typeof arguments[0] === 'function') {
+            xo.events.ready(arguments[0]);
+        }
+    });
+
+    if(typeof window !== 'undefined' && window.attachEvent && !window.addEventListener) {
+        window.attachEvent('onunload', function(){
+            for(var i = 0; i < cache.length; i ++) {
+                try {
+                    events.remove(cache[i].element, cache[i].type);
+                    cache[i] = null;
+                } catch(e){}
+            }
+        });
+    }
 });
