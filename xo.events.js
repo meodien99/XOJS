@@ -169,4 +169,52 @@ define('xo.events', ['xo.core', 'xo.dom'], function(xo) {
         }
         return 'on' + type;
     }
+
+    /**
+     * Bind an event to an element.
+     *
+     *      turing.events.add(element, 'click', function() {
+   *        console.log('Clicked');
+   *      });
+     *
+     * @param {Object} element A DOM element
+     * @param {String} type The event name
+     * @param {Function} handler The event handler
+     */
+    events.add = function(element, type, handler) {
+        if (!isValidElement(element)) return;
+
+        var responder = createResponder(element, handler);
+        cache.push({ element: element, type: type, handler: handler, responder: responder });
+
+        if (type.match(/:/) && element.attachEvent) {
+            element.attachEvent('ondataavailable', responder);
+        } else {
+            if (element.addEventListener) {
+                element.addEventListener(type, responder, false);
+            } else if (element.attachEvent) {
+                element.attachEvent(IEType(type), responder);
+            }
+        }
+    };
+
+    /**
+     * Remove an event from an element.
+     *
+     *      turing.events.add(element, 'click', callback);
+     *
+     * @param {Object} element A DOM element
+     * @param {String} type The event name
+     * @param {Function} handler The event handler
+     */
+    events.remove = function(element, type, handler) {
+        if (!isValidElement(element)) return;
+        var responder = removeCachedResponder(element, type, handler);
+
+        if (document.removeEventListener) {
+            element.removeEventListener(type, responder, false);
+        } else {
+            element.detachEvent(IEType(type), responder);
+        }
+    };
 });
