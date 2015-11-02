@@ -64,7 +64,7 @@ define('xo.events', ['xo.core', 'xo.dom'], function(xo) {
         };
     }
 
-    function removeCacheResponder(element, type, handler) {
+    function removeCachedResponder(element, type, handler) {
         var i = 0, responder, j = 0;
         for(j = 0; j < cache.length; j++) {
             if(cache[j].element !== element
@@ -304,9 +304,23 @@ define('xo.events', ['xo.core', 'xo.dom'], function(xo) {
             }
 
             return this;
+        };
+
+        var chainedAliases = ('click, dbclick, mouseover, mouseout, mousemove, mousedown, mouseup, blur'+
+        'focus, change, keydown, keypress, keyup, resize, scroll').split(',');
+
+        for(var i = 0; i < chainedAliases.length; i++) {
+            (function(name){
+                xo.domChain[name.trim()] = function(handler){
+                    return this.bind(name, handler);
+                };
+            })(chainedAliases[i]);
         }
+
     };
 
+
+    events.addDOMMethods();
 
     /**
      * DOM ready event handlers can also be set with:
