@@ -322,6 +322,96 @@ define('xo.events', ['xo.core', 'xo.dom'], function(xo) {
 
     events.addDOMMethods();
 
+
+    /**
+     *  A generic event manager, based on Node's EventEmitter
+     *      var EventEmitter = xo.events.Emitter,
+     *          emitter = new EventEmitter();
+     *
+     *          emitter.on('testFiredEvent', function(){
+     *              assert.ok(true);
+     *          });
+     *
+     *          emitter.send('testFiredEvent');
+     * @constructor
+     */
+    Emitter = function(){
+        this.events = {};
+    };
+
+    Emitter.prototype = {
+        /**
+         *  Adds a listener. Multiple can be added per eventName, Aliased as `on`
+         */
+        addEventListener : function(eventName, handler) {
+            if(eventName in this.events === false) {
+                this.events[eventName] = [];
+            }
+
+            this.events[eventName].push(handler);
+        },
+
+        /**
+         *  Trigger all matching listeners
+         * @return {Boolean} true if event fired
+         */
+        emit : function(eventName) {
+            var fired = false;
+
+            if(eventName in this.events === false)
+                return fired;
+
+            var list = this.events[eventName].slice();
+
+            for(var i = 0; i < list.length; i++) {
+                list[i].apply(this, Array.prototype.slice.call(arguments, 1));
+                fired = true;
+            }
+
+            return fired;
+        },
+
+        /**
+         *  Removes all matching listeners
+         *
+         * @param eventName
+         */
+        removeAllListeners : function(eventName) {
+            if(eventName in this.events === false)
+                return false;
+
+            delete this.events[eventName];
+            return true;
+        },
+
+        removeListenerAt : function(eventName, at) {
+            this.events[eventName].splice(at, 1);
+        },
+
+        /**
+         *  Removes a listener based on the handler function
+         *
+         * @param eventName
+         * @param handler
+         */
+        removeListener : function(eventName, handler) {
+            if(eventName in this.events === false) return false;
+
+            for(var i = 0; i < this.events[eventName].length; i++) {
+                if(this.events[eventName] === handler) {
+                    this.removeListenerAt(eventName, i);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    };
+
+    Emitter.prototype.on = Emitter.prototype.addEventListener;
+
+    events.Emitter = Emitter;
+
     /**
      * DOM ready event handlers can also be set with:
      *
