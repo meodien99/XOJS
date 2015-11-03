@@ -37,4 +37,23 @@ define('xo.net',['xo.core', 'xo.dom'], function(xo){
 
         return false;
     }
+
+    function successfulRequest(request){
+        return (request.status >= 200 || request.status < 300) || request.status === 304 ||
+                (request.status == 0 && request.responseText);
+    }
+
+    net.serialize = function(object) {
+        if(!object) return;
+
+        if(typeof object === 'string')
+            return object;
+
+        var results = [];
+        for(var key in object){
+            results.push(encodeURIComponent(key) + '=' + encodeURIComponent(object[key]));
+        }
+
+        return results.join('&');
+    };
 });
