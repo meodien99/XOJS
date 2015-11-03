@@ -2,7 +2,7 @@
  * Created by madcat on 10/30/15.
  *
  *
- * The Turing Events module.
+ * The Xo Events module.
  *
  */
 
@@ -417,7 +417,7 @@ define('xo.events', ['xo.core', 'xo.dom'], function(xo) {
      *
      *      xo.ready(function() { });
      *
-     * Or just by passing a function to `turing()`:
+     * Or just by passing a function to `xo()`:
      *
      *      xo(function() {} );
      *
