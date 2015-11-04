@@ -56,4 +56,116 @@ define('xo.net',['xo.core', 'xo.dom'], function(xo){
 
         return results.join('&');
     };
+
+    /**
+     *  JSON.parse support can be inferred using `xo.detect('JSON.parse')`;
+     */
+    xo.addDetectionTest('JSON.parse', function(){
+        return window.JSON && window.JSON.parse;
+    });
+
+    /**
+     * Parses JSON represented as a string.
+     *
+     * @param {String} string The original string
+     * @returns {Object} A JavaScript object
+     */
+    net.parseJSON = function(string) {
+        if(typeof string !== 'string' || !string)
+            return null;
+
+        string = trim(string);
+
+        return xo.detect('JSON.parse') ? window.JSON.parse(string) : (new Function('return' + string))();
+    };
+
+    /**
+     * Parses XML represented as a string.
+     *
+     * @param {String} string The original string
+     * @returns {Object} A JavaScript object
+     */
+    if(window.DOMParser) {
+        net.parseXML = function(text){
+            return new DOMParser().parseFromString(text, 'text/xml');
+        };
+    } else {
+        net.parseXML = function(text) {
+            var xml = new ActiveXObject('Microsoft.XMLDOM');
+            xml.asyc = 'false';
+            xml.loadXML(text);
+            return xml;
+        };
+    }
+
+    /**
+     * Creates an Ajax request.  Returns an object that can be used to chain calls.
+     * For example:
+     *
+     *      $t.post('/post-test')
+     *        .data({ key: 'value' })
+     *        .end(function(res) {
+     *          assert.equal('value', res.responseText);
+     *        });
+     *
+     *      $t.get('/get-test')
+     *        .set('Accept', 'text/html')
+     *        .end(function(res) {
+     *          assert.equal('Sample text', res.responseText);
+     *        });
+     *
+     * The available chained methods are:
+     *
+     * `set` -- set a HTTP header
+     * `data` -- the postBody
+     * `end` -- send the request over the network, and calls your callback with a `res` object
+     * `send` -- sends the request and calls `data`: `.send({ data: value }, function(res) { });`
+     *
+     * @param {String} The URL to call
+     * @param {Object} Optional settings
+     * @returns {Object} A chainable object for further configuration
+     */
+    function ajax(url, options) {
+        var request = xhr(),
+            promise,
+            then,
+            response = {},
+            chain;
+
+        if(xo.Promise) {
+            promise = new xo.Promise();
+        }
+
+        function respondToReadyState(readyState) {
+            if(request.readyState == 4) {
+                var contentType = request.mimeType || request.getResponseHeader('content-type') || '';
+
+                response.status = request.status;
+                response.responseText = request.responseText;
+
+                if(/json/.test(contentType)) {
+                    response.responseJSON = net.parseJSON(request.responseText);
+                } else if(/xml/.test(contentType)) {
+                    response.responseXML = net.parseXML(request.responseText);
+                }
+
+                response.success = successfulRequest(request);
+
+                if(options.callback){
+                    return options.callback(response, request);
+                }
+
+                if(response.success) {
+                    if(options.success) options.success(response,request);
+                    if(promise) promise.resolve(response, request);
+                } else {
+                    if(options.error)   options.error(response, request);
+                    if(promise) promise.reject(response, request);
+                }
+            }
+        }
+
+        // Set the HTTP header
+
+    }
 });
