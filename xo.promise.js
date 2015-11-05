@@ -71,5 +71,29 @@ define('xo.promise', ['xo.core'], function(xo){
          *
          */
 
+        var chain = {};
+
+        xo.init(function(){
+            if(arguments.length === 0)
+                return chain;
+        });
+
+        xo.delay = function(ms){
+            var p = new xo.Promise();
+            setTimeout(p.resolve, ms);
+            return p;
+        };
+
+        global.Promise = Promise;
     }
+
+    if(typeof module !== 'undefined') {
+        module.exports = function(t){
+            return PromiseModile(t);
+        };
+    } else {
+        PromiseModile(xo);
+    }
+
+    return xo.Promise;
 });
