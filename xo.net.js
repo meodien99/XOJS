@@ -216,6 +216,38 @@ define('xo.net',['xo.core', 'xo.dom'], function(xo){
             }
         }
 
+        chain = {
+            set : function(key, value) {
+                options.headers[key] = value;
+                return chain;
+            },
 
-    }
+            send : function(data, callback) {
+                options.postBody = net.serialize(data);
+                options.callback = callback;
+                send();
+                return chain;
+            },
+
+            data : function(data){
+                options.postBody = net.serialize(data);
+                return chain;
+            },
+
+            end : function(callback){
+                options.callback = callback;
+                send();
+                return chain;
+            },
+
+            then : function(){
+                chain.end();
+                if(promise)
+                    promise.then.apply(promise, arguments);
+                return chain;
+            }
+        };
+
+        return chain;
+    } //end ajax function
 });
