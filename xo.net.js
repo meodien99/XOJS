@@ -250,4 +250,35 @@ define('xo.net',['xo.core', 'xo.dom'], function(xo){
 
         return chain;
     } //end ajax function
+
+    function JSONPCallback(url, success, failure) {
+        var self = this;
+        this.url = url;
+        this.methodName = '__xo_jsonp_' + parseInt(new Date().getTime());
+        this.success = success;
+        this.failure = failure;
+
+        function runCallback(json){
+            self.success();
+            self.teardown();
+        }
+
+        window[this.methodName] = runCallback;
+    }
+
+    JSONPCallback.prototype.run = function(){
+        this.scriptTag = document.createElement('script');
+        this.scriptTag.id = this.methodName;
+        this.scriptTag.src = this.url.replace('{callback}', this.methodName);
+        document.body.appendChild(this.scriptTag);
+    };
+
+    JSONPCallback.prototype.teardown = function(){
+        window[this.methodName] = null;
+        delete  window[this.methodName];
+        if(this.scriptTag)
+            document.body.removeChild(this.scriptTag);
+    }
+
+
 });
