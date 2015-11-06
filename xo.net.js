@@ -165,7 +165,57 @@ define('xo.net',['xo.core', 'xo.dom'], function(xo){
             }
         }
 
-        // Set the HTTP header
+        // Set the HTTP headers
+        function setHeaders(){
+            var defaults = {
+                'Accept' : 'text/javascript, application/json, text/html, application/xml, text/xml, */*',
+                'Content-Type' : 'application/x-www-form-urlencoded'
+            };
+
+            // Merge headers with defaults
+            for(var name in defaults) {
+                if(!options.headers.hasOwnProperty(name)) {
+                    options.headers[name] = defaults[name];
+                }
+            }
+
+            for(var name in options.headers){
+                request.setRequestHeader(name, options.headers[name]);
+            }
+        }
+
+        if(typeof options === 'undefined') options = {};
+
+        options.method = options.method ? options.method.toLowerCase() : 'get';
+        options.asynchronous = options.asynchronous || true;
+        options.postBody = options.postBody || '';
+
+        request.onreadystatechange = respondToReadyState;
+        request.open(options.method, url, options.asynchronous);
+
+        options.headers = options.headers || {};
+
+        if(options.contentType){
+            options.headers['Content-Type'] = options.contentType;
+        }
+
+        if(typeof  options.postBody !== 'string') {
+            // Serialize JavaScript
+            options.postBody = net.serialize(options.postBody);
+        }
+
+        setHeaders();
+
+        function send(){
+            try {
+                request.send(options.postBody);
+            } catch (e) {
+                if(options.error) {
+                    options.error();
+                }
+            }
+        }
+
 
     }
 });
