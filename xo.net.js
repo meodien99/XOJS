@@ -102,13 +102,13 @@ define('xo.net',['xo.core', 'xo.dom'], function(xo){
      * Creates an Ajax request.  Returns an object that can be used to chain calls.
      * For example:
      *
-     *      $t.post('/post-test')
+     *      $xo.post('/post-test')
      *        .data({ key: 'value' })
      *        .end(function(res) {
      *          assert.equal('value', res.responseText);
      *        });
      *
-     *      $t.get('/get-test')
+     *      $xo.get('/get-test')
      *        .set('Accept', 'text/html')
      *        .end(function(res) {
      *          assert.equal('Sample text', res.responseText);
@@ -278,7 +278,87 @@ define('xo.net',['xo.core', 'xo.dom'], function(xo){
         delete  window[this.methodName];
         if(this.scriptTag)
             document.body.removeChild(this.scriptTag);
-    }
+    };
 
 
+    /**
+     *  An Ajax GET Request
+     *
+     *      $xo.get('/get-test')
+     *          .set('Accept', 'text/html')
+     *          .end(function(res){
+     *              assert.equal('Result : ', res.respondText);
+     *          });
+     *
+     * @param {String} url The URL to request
+     * @param {Object} options The Ajax request options
+     * @returns {Object} A chainable object for further configuration
+     */
+    net.get = function(url, options) {
+        if(typeof options === 'undefined')
+            options = {};
+
+        options.method = 'get';
+        return ajax(url, options);
+    };
+
+
+    /**
+     * An Ajax POST request.
+     *
+     *      $xo.post('/post-test')
+     *        .data({ key: 'value' })
+     *        .end(function(res) {
+     *          assert.equal('value', res.responseText);
+     *        });
+     *
+     * @param {String} url The URL to request
+     * @param {Object} options The Ajax request options (`postBody` may come in handy here)
+     * @returns {Object} An object for further chaining with promises
+     */
+    net.post = function(url, options) {
+        if(typeof options === 'undefined')
+            options = {};
+
+        options.method = 'post';
+        return ajax(url, options);
+    };
+
+    /**
+     * A jsonp request.  Example:
+     *
+     *     var url = 'http://example.url.com/json/';
+     *     url += 'result/javascript?callback={callback}';
+     *
+     *     xo.net.jsonp(url, {
+     *       success: function(json) {
+     *         console.log(json);
+     *       }
+     *     });
+     *
+     * @param {String} url The URL to request
+     */
+    net.jsonp = function(url, options){
+        if(typeof options === 'undefined')
+            options = {};
+
+        var callback = new JSONPCallback(url, options.success, options.failure);
+        callback.run();
+    };
+
+    /**
+     * The Ajax methods are mapped to the `xo` object:
+     *
+     *      xo.get();
+     *      xo.post();
+     *      xo.json();
+     *
+     */
+    xo.get = net.get;
+    xo.post = net.post;
+    xo.jsonp = net.jsonp;
+
+    net.ajax = ajax;
+
+    xo.net = net;
 });
