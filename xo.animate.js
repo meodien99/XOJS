@@ -34,7 +34,12 @@
  */
 
 define('xo.anim', ['xo.core', 'xo.dom'], function(xo, dom){
-    var anim = {};
+    var anim = {},
+        opacityType,
+        methodName,
+        cssTransitions = {},
+        easing = {},
+        Chainer;
 
     /**
      * These CSS related functions should be moved into xo.css
@@ -137,8 +142,68 @@ define('xo.anim', ['xo.core', 'xo.dom'], function(xo, dom){
 
 
 
-    function isColor(value){
+    function isColour(value){
         return typeof value === 'string' && value.match(/#[a-f|A-F|0-9]|rgb/);
     }
+
+    function parseColor(value){
+        return {
+            value : new Color(value),
+            units : '',
+            transform : colourTransform
+        };
+    }
+
+    function colourTransform (v, position, easingFunction){
+        var colours = [];
+        colours[0] = Math.round(v.base.r + (v.direction[0] * (Math.abs(v.base.r - v.value.r) * easingFunction(position))));
+        colours[1] = Math.round(v.base.g + (v.direction[0] * (Math.abs(v.base.g - v.value.g) * easingFunction(position))));
+        colours[2] = Math.round(v.base.b + (v.direction[0] * (Math.abs(v.base.b - v.value.b) * easingFunction(position))));
+
+        return 'rgb(' + colours.join(', ') + ')';
+    }
+
+    function numericalTransform(parsedValue, position, easingFunction){
+        return (easingFunction(position) * parsedValue.value);
+    }
+
+    function parseNumericalValue(value){
+        var n = (typeof value === 'string') ? parseFloat(value) : value,
+            units = (typeof value === 'string') ? value.replace(n, '') : '';
+
+        return {
+            value : n,
+            units : units,
+            transform : numericalTransform
+        };
+    }
+
+    function parseCSSValue(value, element, property){
+        if(isColour(value)) {
+            var colour = parseColor(value),i;
+
+            colour.base = new Color(element.style[property]);
+            colour.direction = [colour.base.r < colour.value.r ? 1 : -1,
+                                colour.base.g < colour.value.g ? 1 : -1,
+                                colour.base.b < colour.value.b ? 1 : -1 ];
+            return colour;
+        } else if (typeof value !== 'object') {
+            return parseNumericalValue(value);
+        } else {
+            return value;
+        }
+    }
+
+    function setCSSProperty(element, property, value){
+        if(property === 'opacity' && opacityType === 'filter') {
+            element.style[opacityType] = 'alpha(opacity=' + Math.round(value*100) + ')';
+            return element;
+        }
+
+        element.style[property] = value;
+        return element;
+    }
+
+    //Easing Object
 
 });
