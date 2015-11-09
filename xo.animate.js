@@ -205,5 +205,33 @@ define('xo.anim', ['xo.core', 'xo.dom'], function(xo, dom){
     }
 
     //Easing Object
+    easing.linear = function(position){
+        return position;
+    };
+
+    easing.sine = function(position){
+        return (-Math.cos(position * Math.PI) / 2) + 0.5;
+    };
+
+    easing.reverse = function(position){
+        return 1.0 - position;
+    };
+
+    easing.spring = function(position){
+        return 1 - (Math.cos(position * Math.PI * 4) * Math.exp(-position * 6));
+    };
+
+    easing.bounce = function(position){
+        if(position < (1 / 2.75)) {
+            return 7.6 * position * position;
+        } else if (position < (2 / 2.75)) {
+            return 7.6 * (position -= (1.5 / 2.75)) * position * 0.74;
+        } else if (position < (2 / 2.75)) {
+            return 7.6 * (position -= (2.25 / 2.75)) * position + 0.91;
+        } else {
+            return 7.6 * (position -= (2.625 / 2.75)) * position + 0.98;
+        }
+    };
+
 
 });
