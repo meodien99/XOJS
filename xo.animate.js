@@ -37,7 +37,7 @@ define('xo.anim', ['xo.core', 'xo.dom'], function(xo, dom){
     var anim = {},
         opacityType,
         methodName,
-        cssTransitions = {},
+        CSSTransitions = {},
         easing = {},
         Chainer;
 
@@ -234,4 +234,104 @@ define('xo.anim', ['xo.core', 'xo.dom'], function(xo, dom){
     };
 
 
+    /**
+     *  Animates an element using CSS properties
+     *
+     * @param {Object} element A DOM element
+     * @param {Number} duration Duration in milliseconds
+     * @param {Object} properties CSS properties to animate, for example: `{ width: '20px' }`
+     * @param {Object} options Currently accepts an easing function or built-in easing method name (linear, sine, reverse, spring, bounce)
+     */
+    anim.animate = function(element, duration, properties, options){
+        var start = new Date().valueOf(),
+            finish = start + duration,
+            easingFunction = easing.linear,
+            interval, p;
+
+        if(!opacityType){
+            opacityType = getOpacityType();
+        }
+
+        options = options || {};
+        if(options.hasOwnProperty('easing')) {
+            if(typeof options.easing === 'string'){
+                easingFunction = easing[options.easing];
+            } else if (options.easing) {
+                easingFunction = options.easing;
+            }
+        }
+    };
+
+    // Transition
+    CSSTransitions = {
+        // CSS3 vendor detection
+        vendors : {
+            // Opera Presto
+            'opera' : {
+                'prefix' : '-o-',
+                'detector' : function(){
+                    try {
+                        document.createElement('OTransitionEvent');
+                        return true;
+                    } catch (e) {
+                        return false;
+                    }
+                }
+            },
+            // Chrome
+            'webkit' : {
+                'prefix' : '-webkit-',
+                'detector' : function(){
+                    try {
+                        document.createElement('WebKitTransitionEvent');
+                        return true;
+                    } catch (e) {
+                        return false;
+                    }
+                }
+            },
+            // Firefox
+            'firefox' : {
+                'prefix' : '-moz-',
+                'detector' : function(){
+                    var div = document.createElement('div');
+                    var supported = false;
+
+                    if (typeof div.style.MozTransition !== 'undefined') {
+                        supported = true;
+                    }
+
+                    div = null;
+                    return supported;
+                }
+            }
+        },
+
+        vendorPrefix : null,
+
+
+        findCSS3VendorPrefix : function(){
+            var detector;
+            for (detector in CSSTransitions.vendors){
+                if(this.vendors.hasOwnProperty(detector)){
+                    detector = this.vendors[detector];
+                    if(detector.detector()){
+                        return detector.prefix;
+                    }
+                }
+            }
+        },
+
+        // CSS3 Transition
+        start : function(element, duration, property, value, easing){
+            element.style[camelize(this.vendorPrefix + 'transition')] = property + ' ' + duration + 'ms ' + (easing || 'linear');
+            element.style[property] = value;
+        },
+
+        end : function(element, property){
+            element.style[camelize(this.vendorPrefix + 'transition')] = null;
+        }
+    };
+
+    CSSTransitions.vendorPrefix = CSSTransitions.findCSS3VendorPrefix();
 });
