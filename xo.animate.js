@@ -434,5 +434,98 @@ define('xo.anim', ['xo.core', 'xo.dom'], function(xo, dom){
 
     anim.pause = function(element, duration, options){};
 
+    /**
+     * Easing functions: linear, sine, reverse, spring, bounce.
+     */
+    anim.easing = easing;
 
+    // Chainer
+    Chainer = function(element){
+        this.element = element;
+        this.position = 0;
+    };
+
+    function makeChain(m){
+        var method = anim[m];
+        Chainer.prototype[m] = function(){
+            var args = Array.prototype.slice.call(arguments);
+            args.unshift(this.element);
+            // Note: the duration needs to be communicated another way
+            // because of defaults (like highlight())
+            this.position += args[1] || 0;
+            setTimeout(function(){
+                method.apply(null, args);
+            }, this.position);
+
+            return this;
+        };
+    }
+
+    for (methodName in anim){
+        if(anim.hasOwnProperty(methodName)){
+            makeChain(methodName);
+        }
+    }
+
+    /**
+     * Chain animation module calls, for example:
+     *
+     *     xo.anim.chain(element)
+     *       .highlight()
+     *       .pause(250)
+     *       .move(100, { x: '100px', y: '100px', easing: 'ease-in-out' })
+     *       .animate(250, { width: '1000px' })
+     *       .fadeOut(250)
+     *       .pause(250)
+     *       .fadeIn(250)
+     *       .animate(250, { width: '20px' });
+     *
+     * @param {Object} element A DOM element
+     * @returns {Chainer} Chained API object
+     */
+
+    anim.chain = function(element){
+        return new Chainer(element);
+    };
+
+    /**
+     * Animations can be chained with DOM calls:
+     *
+     *       xo('p').animate(2000, {
+     *         color: '#ff0000'
+     *       });
+     *
+     */
+    anim.addDOMMethods = function(){
+        if(typeof xo.domChain === 'undefined'){
+            return;
+        }
+
+        var chainedAliases = ('animate fade fadeIn fadeOut highlight ' +
+                              'move parseColour pause easing');
+        var i;
+
+        function makeChainAlias(name){
+            xo.domChain[name] = function(handler){
+                var j, args = xo.toArray(arguments);
+                args.unshift(null);
+
+                for(j = 0; j < this.length; j++){
+                    args[0] = this[j];
+                    anim[name].apply(this, args);
+                }
+
+                return this;
+            };
+        }
+
+        for(i = 0 ; i < chainedAliases.length; i++){
+            makeChainAlias(chainedAliases[i]);
+        }
+    };
+
+    anim.addDOMMethods();
+
+    xo.anim = anim;
+    return anim;
 });

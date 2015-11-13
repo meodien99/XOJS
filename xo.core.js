@@ -146,6 +146,10 @@
         exports.xo = xo;
     }
 
+    xo.define('xo.core', [], function(){
+        return xo;
+    });
+
     if(typeof define === 'undefined') {
         global.define = xo.define;
     }
