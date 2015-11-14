@@ -25,3 +25,47 @@
  *       alert('Orientation is now: ' + xo.touch.orientation());
  *     });
  */
+
+define('xo.touch', ['xo.core', 'xo.dom', 'xo.events'], function(xo, dom, events){
+    var touch = {},
+        state = {};
+
+    touch.swipeThreshold = 50;
+
+    //Returns [orientation angle, orientation string]
+    touch.orientation = function(){
+        var orientation = window.orientation,
+            orientationString = '';
+
+        switch (orientation) {
+            case 0:
+                orientationString += 'portrait';
+                break;
+
+            case -90:
+                orientationString += 'landscape left';
+                break;
+
+            case 90:
+                orientationString += 'landscape left';
+                break;
+
+            case 180:
+                orientationString += 'portrait upside-down';
+                break;
+        }
+
+        return [orientation, orientationString];
+    };
+
+    function touchStart(e){
+        state.touches = e.touches;
+        state.startTime = e.startTime;
+        state.x = e.changedTouches[0].clientX;
+        state.y = e.changedTouches[0].clientY;
+        state.startX = state.x;
+        state.startY = state.y;
+        state.target = e.target;
+        state.duration = 0;
+    }
+});
