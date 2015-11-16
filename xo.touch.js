@@ -68,4 +68,36 @@ define('xo.touch', ['xo.core', 'xo.dom', 'xo.events'], function(xo, dom, events)
         state.target = e.target;
         state.duration = 0;
     }
+
+    function touchEnd(e){
+        var x = e.changedTouches[0].clientX,
+            y = e.changedTouches[0].clientY;
+
+        if(state.x === x && state.y === y && state.touches.length === 1) {
+            xo.events.fire(e.target, 'tap');
+        }
+    }
+
+    function touchMove(e){
+        var moved = 0, touch = e.changedTouches[0];
+        state.duration = (new Date).getTime() - state.startTime;
+        state.x = state.startX - touch.pageX;
+        state.y = state.startY - touch.pageY;
+
+        moved = Math.sqrt(Math.pow(Math.abs(state.x), 2) + Math.pow(Math.abs(state.y), 2));
+
+        if(state.duration < 1000 && moved > xo.touch.swipeThreshold) {
+            xo.events.fire(e.target, 'swipe');
+        }
+    }
+
+    // register must be called to register for touch event helpers
+    touch.register = function(){
+        xo.events.add(document, 'touchstart', touchStart);
+        xo.events.add(document, 'touchmove', touchMove);
+        xo.events.add(document, 'touchend', touchEnd);
+    };
+
+    xo.touch = touch;
+    return xo.touch;
 });
