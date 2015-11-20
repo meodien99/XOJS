@@ -39,4 +39,13 @@ define('xo.require',['xo.core'], function(xo){
 
         return script;
     }
+
+    /**
+     * Inserts a script tag into the document.
+     *
+     * @param {String} The script tag
+     */
+    function insertScript(script) {
+        appendTo.insertBefore(script, appendTo.firstChild);
+    }
 });
