@@ -50,5 +50,38 @@ Define a class just simple as :
     }
   });
  ```
-
+### Enumerable  ###
+ ```html
+ This is bound to DOM objects:
+  
+       global('p').each(function() {
+         // `this` contains a DOM element
+       });
+ ```
+ Enumerable support features :
+### each ###
+  ```html
+    xo.enumerable.each([1,2,3], function(n){
+                    console.debug(n);
+                   });
+  ```
+### map  ###
+  ```html
+    xo.enumerable.map([1, 2, 3], function(n) {
+               return n + 1;
+              }); // => [2,3,4]
+  ```
+### filter ###
+  ```html
+    Removes items based on a callback :
+             
+               var a = [1, 2, 3, 4, 5, 6];
+               xo.enumerable.filter(a, function(n){
+                   return n % 2 === 0;
+               });
+             
+               => [2, 4, 6];
+  ```
+    
+    
  UPDATING...
