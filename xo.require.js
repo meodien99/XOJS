@@ -70,7 +70,30 @@ define('xo.require',['xo.core'], function(xo){
             .get(scriptSrc)
             .end(function(res){
                 options.text = res.responseText;
+                fn(options);
             });
+    }
+
+    /**
+     * Loads scripts using script tag insertion.
+     *
+     * @param {String} scriptSrc The script path
+     * @param {Object} options configuration object
+     * @param {Function} fn callback
+     */
+    function requireWithScriptInsertion(scriptSrc, options, fn){
+        options.src = scriptSrc;
+        var script = createScript(options);
+
+        script.onload = script.onreadystatechange = function(){
+            if(!script.readyState || (script.readyState == 'complete' || script.readyState == 'loaded')){
+                script.onload = script.onreadystatechange = null;
+                fn();
+                appendTo.removeChild(script);
+            }
+        };
+
+        insertScript(script);
     }
 
     function Queue(sources){
@@ -89,6 +112,16 @@ define('xo.require',['xo.core'], function(xo){
     }
 
     Queue.prototype = {
+        on : function(){
+            this.events.on.apply(this.events, arguments);
+            return this;
+        },
+
+        emit : function(){
+            this.events.on.apply(this.events, arguments);
+            return this;
+        },
+
         parseQueue : function(sources, async, level){
             var i, source;
             for(i = 0; i < sources.length; i++){
@@ -122,6 +155,27 @@ define('xo.require',['xo.core'], function(xo){
             }
 
             this.groups[this.currentGroup].push(options);
+        },
+
+        nextItem : function(){
+            var group, i, j, item;
+            for(i = 0; i < this.groupKeys.length; i++){
+                group = this.groups[this.groupKeys[i]];
+                for(j = 0; j < group.length; j++){
+                    item = group[j];
+                    if(!item.loaded){
+                        return item;
+                    }
+                }
+            }
+        },
+
+        fetchExecute : function(item, fn){
+            var self = this;
+            requireWithScriptInsertion(item.src, { async: true, defer: true }, function() {
+                fn();
+            });
         }
+
     }
 });
