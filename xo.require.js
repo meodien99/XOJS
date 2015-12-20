@@ -170,12 +170,63 @@ define('xo.require',['xo.core'], function(xo){
             }
         },
 
+        preloadAll : function(){
+            var i, g, group, item, self = this;
+            for(g = 0; g < this.groupKeys; g++){
+                group = this.groups[this.groupKeys[g]];
+
+                for(i = 0; i < group.length; i++){
+                    item = group[i];
+
+                    this.preloadCount ++;
+                    (function(groupItem){
+                        requireWithXMLHttpRequest(groupItem.src, {}, function(script){
+                            self.emit('preloaded', script);
+                        });
+                    }(item));
+                }
+            }
+        },
+
         fetchExecute : function(item, fn){
             var self = this;
             requireWithScriptInsertion(item.src, { async: true, defer: true }, function() {
                 fn();
             });
-        }
+        },
 
+        execute : function(item, fn){
+            if(item && item.scriptOptions){
+                script = createScript(item.scriptOptions);
+                insertScript(script);
+                appendTo.remove(script);
+            }
+
+            fn();
+        },
+
+        runQueue : function(){
+            // Preload everything that can be preloaded
+            this.preloadAll();
+        },
+
+        installEventHandlers : function(){
+            var self = this;
+        }
+    };
+
+    function runWhenReady(fn){
+        settimeout(function(){
+            if('item' in appendTo){
+                if(!appendTo[0]){
+                    return setTimeout(arguments.callee, 25);
+                }
+
+                appendTo = appendTo[0]
+            }
+
+            fn();
+        });
     }
+
 });
